@@ -15,7 +15,7 @@ Every trading day **after market close**, the system:
 - 🤖 Predicts **5-day upside probability** using ML
 - 🏆 Ranks the **Top 5 Smallcap stocks**
 - 🎯 Generates **Entry, SL, TP1–TP3**
-- 📊 Logs results for **30-day performance tracking**
+- 📊 Logs daily picks for performance tracking
 
 ---
 
@@ -45,7 +45,7 @@ Every trading day **after market close**, the system:
 
 ## 🤖 Machine Learning (Used Carefully)
 
-- Model: **Calibrated Logistic Regression**
+- Model: **Calibrated Logistic Regression** (stored under ml/model.pkl)
 - Label: *Did the stock move X% within 5 trading days?*
 - Handles class imbalance ✔
 - ML **confirms** trades — rules come first
@@ -64,19 +64,32 @@ Every trading day **after market close**, the system:
 | 4    | PNBHOUSING.NS | 0.49       | PULLBACK_CONTINUATION |
 | 5    | BSOFT.NS      | 0.47       | BREAKOUT_SETUP        |
 
+---
+
 ## 📂 Project Structure
 
+This README reflects the actual repository layout used by the scripts:
+
 ```text
-├── data/                  # Historical stock data storage
-├── models/                # Trained ML models for trend confirmation
-├── output/                # Daily Excel logs and performance tracking
-├── strategies/            # Price action logic and trend definitions
-├── utils/                 # Helper functions (indicators, math)
-├── run_daily.py           # Main execution script
-├── requirements.txt       # Python dependencies
-└── README.md              # Project documentation
-# NIFTY Smallcap Trade Scanner
+├── charts/               # Chart generation and saved PNGs
+├── data/                 # Historical stock data storage (processed CSVs)
+├── features/             # Price-action rules, indicators, filters
+├── ml/                   # Trained ML model and prediction wrappers (model.pkl)
+├── output/               # Daily CSV outputs (top_picks_YYYY-MM-DD.csv)
+├── ranking/              # Ranking & trade plan computation
+├── universe/             # Universe CSV (smallcap_250.csv)
+├── utils/                # Helper functions (data loaders, helpers)
+├── run_daily.py          # Main execution script
+└── README.md             # Project documentation
 ```
+
+Notes:
+- The trained model is under `ml/model.pkl`.
+- Daily CSVs are saved as `output/top_picks_YYYY-MM-DD.csv` (see run_daily.py).
+- Charts for ranked picks are generated and saved to the `charts/` folder.
+
+---
+
 # NIFTY Smallcap Trade Scanner
 
 ## ▶️ How To Run
@@ -84,26 +97,34 @@ Every trading day **after market close**, the system:
 Execute the scanner **after market close** to ensure data completeness.
 
 1. **Install Dependencies:**
+
+```bash
 pip install -r requirements.txt
+```
+
 2. **Run the Scanner:**
 
+```bash
+python run_daily.py
+```
 
-**Output:** The script scans all 250 NIFTY Smallcap stocks and outputs the **Top 5 high-probability trade setups** based on the algorithm.
+What happens when you run it:
+- The script scans the universe in `universe/smallcap_250.csv`.
+- It applies liquidity, indicator, trend and pattern filters.
+- It computes ML probability and an overall confidence score.
+- Top N picks (default 5) are written to `output/top_picks_<YYYY-MM-DD>.csv`.
+- Charts for the ranked picks are generated and saved to `charts/`.
+
+---
 
 ## 📊 Performance Tracking
 
-We believe in radical transparency. Trades are logged daily into a local Excel sheet (`/output/trade_log.xlsx`) for forward testing.
+This project logs daily picks to CSV files in `output/` for forward testing and tracking. The repository does not automatically maintain an Excel trade log; if you want an aggregated Excel file or a separate tracking sheet, export or aggregate the daily CSVs yourself.
 
 **Tracking Methodology:**
-- Trades are logged automatically after the scan.
-- Holding Days are auto-calculated based on entry date.
-- Outcomes are manually updated for validation.
+- Picks are saved daily; outcomes and performance tracking must be handled separately or via custom tooling.
 
-**Visual Status:**
-- ✅ **HIT:** Full row turns Green (Target Achieved).
-- ❌ **FAIL:** Full row turns Red (Stop Loss Hit).
-
-**Purpose:** Used for real 30-day forward performance validation to ensure the model adapts to changing market conditions.
+---
 
 ## 🧱 Project Philosophy
 
@@ -115,6 +136,8 @@ This scanner is built on specific core principles to ensure longevity and capita
 - 🎯 **Probability > Prediction:** We don't guess; we play the statistical edge.
 - 🛑 **Risk First:** Risk management protocols are calculated before return targets.
 
+---
+
 ## 🚀 Future Improvements
 
 - [ ] Telegram Integration: Automated alerts for the Top 5 picks.
@@ -122,13 +145,11 @@ This scanner is built on specific core principles to ensure longevity and capita
 - [ ] Sector Heatmap: Filtering stocks based on sector rotation.
 - [ ] Dashboard: A simple web UI (Streamlit) to visualize the daily picks.
 
+---
+
 ## ⚠️ Disclaimer
 
 This project is built for **educational and research purposes only**.  
 It is **not financial advice**. Trading in the stock market involves significant risk. Please consult a **SEBI-registered financial advisor** before making any investment decisions. The developers of this tool are not responsible for any financial losses.
 
 **Built with ❤️ using price action, discipline, and data.**
-  
-
-
-
