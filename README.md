@@ -86,6 +86,7 @@ Execute the scanner **after market close** to ensure data completeness.
 1. **Install Dependencies:**
 pip install -r requirements.txt
 2. **Run the Scanner:**
+run run_daily.py
 
 
 **Output:** The script scans all 250 NIFTY Smallcap stocks and outputs the **Top 5 high-probability trade setups** based on the algorithm.
