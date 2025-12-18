@@ -5,12 +5,17 @@ def classify_pattern(
     consolidation,
     volume_support,
     near_res,
-    resistance
+    resistance,
+    rsi_val=None
 ):
     """
     Classifies stock into one dominant pattern.
     Applies rejection filter near resistance.
     """
+    
+    # 🔴 RSI FILTER: Avoid buying overbought
+    if rsi_val is not None and rsi_val > 75:
+        return None
 
     # 🔴 HARD FILTER: reject fake breakouts
     if near_res:

@@ -1,11 +1,14 @@
 import numpy as np
+import pandas as pd
 
 from ml.confidence import compute_confidence
 from ml.model import load_model
 
 from features.indicators import (
     is_uptrend,
-    ema_trend_strength
+    ema_trend_strength,
+    add_rsi,
+    add_adx
 )
 
 from features.patterns import (
@@ -29,7 +32,9 @@ from utils.financials_loader import get_quarterly_financials
 MODEL = load_model()
 
 
-def predict_today_probability(df, symbol):
+from features.market_regime import calculate_rs
+
+def predict_today_probability(df, symbol, nifty_df=None):
     """
     Returns:
     - ml_probability (float)
@@ -48,7 +53,8 @@ def predict_today_probability(df, symbol):
     # ------------------------
     # 1.5. FINANCIAL ANALYSIS
     # ------------------------
-    financials_df = get_quarterly_financials(symbol + ".NS")
+    ticker = symbol if symbol.endswith(".NS") else symbol + ".NS"
+    financials_df = get_quarterly_financials(ticker)
     financial_analysis = analyze_quarterly_financials(financials_df)
     financial_label = financial_analysis["financial_label"]
     financial_score = financial_analysis["financial_score"]
@@ -62,6 +68,37 @@ def predict_today_probability(df, symbol):
     near_res = is_near_resistance(df, resistance)
 
     # ------------------------
+    # ADVANCED INDICATORS (Step 1 of Integration)
+    # ------------------------
+    df = add_rsi(df)
+    df = add_adx(df)
+    
+    rsi_val = df["rsi_14"].iloc[-1] if "rsi_14" in df.columns else None
+    
+    # ADX Check (> 25 is strong trend)
+    adx_val = df["adx_14"].iloc[-1] if "adx_14" in df.columns else 0
+    strong_trend = adx_val > 25
+    
+    # Volatility Squeeze
+    from features.indicators import get_volatility_squeeze
+    vcp = get_volatility_squeeze(df)
+    
+    # Relative Strength (vs Nifty 50)
+    rs_score = calculate_rs(df, nifty_df)
+    
+    # Weekly Trend Check (Resampling)
+    # Convert daily to weekly
+    try:
+        # Ensure index is datetime
+        df.index = pd.to_datetime(df["date"])
+        weekly = df.resample('W').agg({'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last'})
+        weekly["ema_20"] = weekly["close"].ewm(span=20, adjust=False).mean()
+        weekly_trend = weekly["close"].iloc[-1] > weekly["ema_20"].iloc[-1] if len(weekly) > 20 else True
+    except Exception as e:
+        print(f"Warning: Weekly resample failed for {symbol}: {e}")
+        weekly_trend = True # Default to True to not block
+
+    # ------------------------
     # 2. PATTERN CLASSIFICATION
     # ------------------------
     pattern = classify_pattern(
@@ -71,7 +108,8 @@ def predict_today_probability(df, symbol):
         consolidation=consolidation,
         volume_support=volume_support,
         near_res=near_res,
-        resistance=resistance
+        resistance=resistance,
+        rsi_val=rsi_val
     )
 
     if pattern is None:
@@ -85,13 +123,23 @@ def predict_today_probability(df, symbol):
     if uptrend:
         rule_score += 2
     if bullish_candles:
-        rule_score += 2
+        rule_score += 1
     if consolidation:
-        rule_score += 2
+        rule_score += 1
     if volume_support:
-        rule_score += 2
+        rule_score += 1
     if near_res:
-        rule_score += 2
+        rule_score += 1
+    
+    # Advanced Signals Bonus
+    if strong_trend: # ADX > 25
+        rule_score += 1
+    if weekly_trend:
+        rule_score += 1
+    if vcp:
+        rule_score += 1
+    if rs_score > 1.05: # Outperforming by 5% over period
+        rule_score += 1
 
     rule_score = min(rule_score, 10)
 

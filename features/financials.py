@@ -33,26 +33,51 @@ def analyze_quarterly_financials(financials_df):
         latest_quarter = financials_df.iloc[:, 0]
         previous_quarter = financials_df.iloc[:, 1]
 
-        # Check for 'Total Revenue'
-        if 'Total Revenue' not in latest_quarter.index or 'Total Revenue' not in previous_quarter.index:
-            print("DEBUG: 'Total Revenue' not found in financial data.")
-            return result
+        # Robust Key Lookup (Total Revenue vs Operating Revenue)
+        revenue_keys = ['Total Revenue', 'Operating Revenue', 'Revenue']
+        latest_revenue = None
+        previous_revenue = None
 
-        latest_revenue = latest_quarter['Total Revenue']
-        previous_revenue = previous_quarter['Total Revenue']
+        for key in revenue_keys:
+            if key in latest_quarter.index and key in previous_quarter.index:
+                latest_revenue = latest_quarter[key]
+                previous_revenue = previous_quarter[key]
+                break
+        
+        if latest_revenue is None:
+            return {"financial_label": "Neutral (NoKey)", "financial_score": 0.0}
 
-        if latest_revenue > previous_revenue:
-            result["financial_label"] = "Good"
-            result["financial_score"] = 0.1
+        # Ensure values are numeric
+        try:
+            latest_revenue = float(latest_revenue)
+            previous_revenue = float(previous_revenue)
+        except Exception as conversion_e:
+            print(f"DEBUG: Could not convert revenue to float: {conversion_e}")
+            return {"financial_label": "Neutral (TypeErr)", "financial_score": 0.0}
+
+        if previous_revenue == 0:
+            result["financial_label"] = 0.5 # Default if prev revenue is 0
+            result["financial_score"] = 0.0
         else:
-            result["financial_label"] = "Bad"
-            result["financial_score"] = -0.1
+            growth = (latest_revenue - previous_revenue) / previous_revenue
+            
+            # Map growth to score: 0% grow -> 0.5. +25% -> 1.0. -25% -> 0.0
+            score = 0.5 + (growth * 2)
+            score = max(0.0, min(1.0, score)) # Clamp
+            
+            result["financial_label"] = round(score, 2)
+            
+            # ML Bonus: Scale 0-1 back to approx -0.1 to +0.1
+            # 0.5 -> 0.0
+            # 1.0 -> 0.1
+            # 0.0 -> -0.1
+            result["financial_score"] = (score - 0.5) * 0.2
 
     except Exception as e:
         print(f"Could not analyze financial data: {e}")
         # Return neutral if any error occurs
         return {
-            "financial_label": "Neutral",
+            "financial_label": f"Neutral ({type(e).__name__})",
             "financial_score": 0.0
         }
 

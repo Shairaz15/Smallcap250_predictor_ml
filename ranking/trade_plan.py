@@ -17,6 +17,7 @@ def compute_trade_plan(df, probability):
     tp3 = close * (1 + tp3_pct)
 
     sl = close - atr
+    trailing_sl = close - (1.5 * atr)
 
     # Probabilities
     p_tp1 = min(0.95, probability * 1.3)
@@ -28,6 +29,7 @@ def compute_trade_plan(df, probability):
         "tp2": round(tp2, 2),
         "tp3": round(tp3, 2),
         "sl": round(sl, 2),
+        "trailing_sl": round(trailing_sl, 2),
         "p_tp1": round(p_tp1, 2),
         "p_tp2": round(p_tp2, 2),
         "p_tp3": round(p_tp3, 2),

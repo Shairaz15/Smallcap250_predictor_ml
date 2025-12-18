@@ -102,3 +102,81 @@ def ema_trend_strength(df):
         (df["ema_10"].iloc[-1] - df["ema_15"].iloc[-1])
         / df["ema_15"].iloc[-1]
     )
+
+
+# -------------------------
+# RSI INDICATOR
+# -------------------------
+def add_rsi(df, period=14):
+    """
+    Adds RSI column.
+    Uses Wilder's Smoothing.
+    """
+    col = f"rsi_{period}"
+    
+    if col in df.columns:
+        return df
+
+    delta = df["close"].diff()
+    up = delta.clip(lower=0)
+    down = -1 * delta.clip(upper=0)
+
+    # Wilder's Smoothing
+    ma_up = up.ewm(com=period - 1, adjust=False, min_periods=period).mean()
+    ma_down = down.ewm(com=period - 1, adjust=False, min_periods=period).mean()
+
+    rs = ma_up / ma_down
+    df[col] = 100 - (100 / (1 + rs))
+
+    return df
+
+
+# -------------------------
+# ADX INDICATOR
+# -------------------------
+def add_adx(df, period=14):
+    """
+    Computes ADX (Trend Strength).
+    """
+    if f"adx_{period}" in df.columns:
+        return df
+        
+    plus_dm = df["high"].diff()
+    minus_dm = df["low"].diff()
+    
+    plus_dm = np.where((plus_dm > minus_dm) & (plus_dm > 0), plus_dm, 0.0)
+    minus_dm = np.where((minus_dm > plus_dm) & (minus_dm > 0), -minus_dm, 0.0)
+    
+    tr = atr(df, period=1) # True Range for 1 period
+    
+    # Smooth
+    tr_smooth = pd.Series(tr).rolling(period).sum()
+    plus_dm_smooth = pd.Series(plus_dm).rolling(period).sum()
+    minus_dm_smooth = pd.Series(minus_dm).rolling(period).sum()
+    
+    plus_di = 100 * (plus_dm_smooth / tr_smooth)
+    minus_di = 100 * (minus_dm_smooth / tr_smooth)
+    
+    dx = 100 * np.abs(plus_di - minus_di) / (plus_di + minus_di)
+    adx = dx.rolling(period).mean()
+    
+    df[f"adx_{period}"] = adx
+    return df
+
+
+# -------------------------
+# VCP / VOLATILITY SQUEEZE
+# -------------------------
+def get_volatility_squeeze(df, lookback=10, avg_lookback=50):
+    """
+    Returns True if recent volatility (std dev) is < 50% of historical average.
+    """
+    if len(df) < avg_lookback:
+        return False
+        
+    df["log_ret"] = np.log(df["close"] / df["close"].shift(1))
+    
+    recent_std = df["log_ret"].tail(lookback).std()
+    hist_std = df["log_ret"].tail(avg_lookback).std()
+    
+    return recent_std < (hist_std * 0.5)

@@ -3,11 +3,9 @@ import pandas as pd
 from datetime import datetime
 
 from ranking.rank_today import rank_today
-from charts.generate import generate_charts_for_ranked
 
 # Output folders
 os.makedirs("output", exist_ok=True)
-os.makedirs("charts", exist_ok=True)
 
 def run_daily():
     today = datetime.now().strftime("%Y-%m-%d")
@@ -25,13 +23,10 @@ def run_daily():
     df.to_csv(csv_path, index=False)
     print(f"Saved CSV: {csv_path}")
 
-    # Generate charts
-    generate_charts_for_ranked(df)
-    print("Charts generated.")
-
     # Console summary
-    print("\nTOP PICKS TODAY:\n")
-    print(df[["rank", "symbol", "confidence", "pattern", "rule_score", "financials"]])
+    from utils.helpers import print_colored_df
+    print("\nTOP PICKS TODAY:")
+    print_colored_df(df[["rank", "symbol", "confidence", "pattern", "rule_score", "financials", "trailing_sl"]])
 
 
 if __name__ == "__main__":

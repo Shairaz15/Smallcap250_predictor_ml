@@ -93,3 +93,69 @@ def compute_resistance(df, lookback=50):
         return None
 
     return df["high"].tail(lookback).max()
+
+
+# -----------------------------
+# COLORED CONSOLE OUTPUT
+# -----------------------------
+def print_colored_df(df):
+    """
+    Prints the DataFrame with color-coded columns using colorama.
+    """
+    try:
+        from colorama import init, Fore, Style
+        init(autoreset=True)
+        
+        # Define headers
+        headers = ["rank", "symbol", "confidence", "pattern", "rule_score", "financials", "trailing_sl"]
+        # Filter for existing headers only
+        headers = [h for h in headers if h in df.columns]
+        
+        # Print Header
+        header_str = " | ".join([f"{h.upper():<12}" for h in headers])
+        print("\n" + Style.BRIGHT + header_str)
+        print("-" * len(header_str))
+
+        for _, row in df.iterrows():
+            line = []
+            for col in headers:
+                val = row[col]
+                text = f"{str(val):<12}"
+                
+                # Apply Color Logic
+                if col == "confidence":
+                    if val >= 0.7:
+                        text = Fore.GREEN + text + Fore.RESET
+                    elif val >= 0.5:
+                        text = Fore.YELLOW + text + Fore.RESET
+                    else:
+                        text = Fore.RED + text + Fore.RESET
+                
+                elif col == "financials":
+                    try:
+                        f_score = float(val)
+                        if f_score >= 0.7:
+                             text = Fore.GREEN + text + Fore.RESET
+                        elif f_score <= 0.3:
+                             text = Fore.RED + text + Fore.RESET
+                        else:
+                             text = Fore.CYAN + text + Fore.RESET
+                    except:
+                        text = Fore.CYAN + text + Fore.RESET
+
+                elif col == "rule_score":
+                    if val >= 7:
+                        text = Fore.GREEN + text + Fore.RESET
+                    elif val >= 5:
+                        text = Fore.YELLOW + text + Fore.RESET
+                    else:
+                        text = Fore.RED + text + Fore.RESET
+                
+                line.append(text)
+            
+            print(" | ".join(line))
+        print("\n")
+
+    except ImportError:
+        # Fallback if colorama not installed
+        print(df)
