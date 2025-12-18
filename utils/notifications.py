@@ -2,6 +2,9 @@ import os
 import requests
 import json
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def send_whatsapp_message(message):
     """
