@@ -16,6 +16,8 @@ def run_daily():
 
     if df.empty:
         print("No valid setups today.")
+        from utils.notifications import send_whatsapp_message, format_daily_summary
+        send_whatsapp_message(format_daily_summary(df))
         return
 
     # Save CSV
