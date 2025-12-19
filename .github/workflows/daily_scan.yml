@@ -30,7 +30,7 @@ jobs:
         # WARNING: Passwords are visible in this file. Keep this repository PRIVATE.
         GREENAPI_INSTANCE_ID: "7105430425"
         GREENAPI_API_TOKEN: "f103711705aa4a6d9dba3ba0152191c4f2a80bd818b44bc39d"
-        GREENAPI_TARGET_PHONE: "8618136168"
+        GREENAPI_TARGET_PHONE: "9535957218"
         GREENAPI_HOST: "7105.api.greenapi.com"
       run: |
         python run_daily.py
