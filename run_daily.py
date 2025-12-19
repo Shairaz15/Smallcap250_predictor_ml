@@ -22,7 +22,7 @@ def run_daily():
     # 1. Weekend Check (If next day is Sat or Sun, skip)
     if weekday >= 5:
         print(f"Skipping: Next day ({next_day.strftime('%A')}) is a weekend.")
-        return
+        # return # TEMPORARY: Commented out for testing notification
 
     # 2. NSE Holidays 2025 (Hardcoded for reliability)
     # Format: YYYY-MM-DD
