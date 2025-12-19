@@ -62,8 +62,15 @@ def format_daily_summary(df):
         rank = row.get('rank', index + 1)
         conf = row.get('confidence', 0.0)
         
-        # Format: 1. SYMBOL (95%)
+        # Format: 
+        # 1. SYMBOL (95%)
+        #    TP1: 100 | SL: 90 | Fin: Good
+        tp1 = row.get('tp1', 0)
+        sl = row.get('sl', 0)
+        fin = row.get('financials', 'N/A')
+        
         msg += f"{rank}. *{symbol}* ({conf:.0%})\n"
+        msg += f"   TP1: {tp1} | SL: {sl} | Fin: {fin}\n"
     
     msg += "\n_Check email/logs for details._"
     return msg
